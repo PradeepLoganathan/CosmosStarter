@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Threading.Tasks;
 using CosmosStarter.Entities;
 using Microsoft.Azure.Cosmos;
@@ -47,7 +46,8 @@ namespace CosmosStarter
             }
             catch (CosmosException ex) 
             {
-                
+                Console.WriteLine("Exception occured in AddCustomer: {0} Message body is {1}.\n", ex.Message,ex.ResponseBody);
+                throw;
             }
 
         }
@@ -65,23 +65,55 @@ namespace CosmosStarter
             }
             catch (CosmosException ex) 
             {
-                
+                Console.WriteLine("Exception occured in AddOrders: {0} Message body is {1}.\n", ex.Message,ex.ResponseBody);
+                throw;
             }
 
         }
 
-
-
-        public async Task GetCustomerTask(string customerId, string companyName)
+        public async Task<Customer> GetCustomer(string customerId)
         {
             try
             {
-                var customerResponse = await this._container.ReadItemAsync<Customer>(customerId, new PartitionKey(companyName));
-                Console.WriteLine("Item in database with id: {0} already exists\n", customerId);
+                var customerResponse = await this._container.ReadItemAsync<Customer>(customerId, new PartitionKey(customerId));
+                return customerResponse;
             }
             catch (CosmosException ex) 
             {
-                
+                Console.WriteLine("Exception occured in GetCustomer: {0} Message body is {1}.\n", ex.Message,ex.ResponseBody);
+                throw ;
+            }
+
+        }
+
+        public async Task<List<Order>> GetOrders(string customerId)
+        {
+            try
+            {
+                var sqlQueryText = "SELECT * FROM c WHERE c.CustomerId = @customerid";
+
+                Console.WriteLine("Running query: {0}\n", sqlQueryText);
+                QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText).WithParameter("@customerid", "CU7-36-8183" );
+                FeedIterator<Order> queryResultSetIterator = this._container.GetItemQueryIterator<Order>(queryDefinition);
+
+                List<Order> orders = new List<Order>();
+
+                while (queryResultSetIterator.HasMoreResults)
+                {
+                    FeedResponse<Order> currentResultSet = await queryResultSetIterator.ReadNextAsync();
+                    foreach (Order order in currentResultSet)
+                    {
+                        orders.Add(order);
+                        Console.WriteLine("\tRead {0}\n", order.OrderId);
+                    }
+                }
+
+                return orders;
+            }
+            catch (CosmosException ex) 
+            {
+                Console.WriteLine("Exception occured in GetCustomer: {0} Message body is {1}.\n", ex.Message,ex.ResponseBody);
+                throw ;
             }
 
         }
