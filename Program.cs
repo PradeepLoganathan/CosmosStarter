@@ -6,11 +6,8 @@ using Microsoft.Azure.Cosmos;
 
 namespace CosmosStarter
 {
-    partial class Program
+    public static class Program
     {
-        //private const string EndpointUri = "https://theta-cosmosdb-account.documents.azure.com:443/";
-        //private const string PrimaryKey = "OZnTr2MTGOO4IGWXEBMs8nmAOKkhOoxDzgOc0lwvoXTDotvYYQz7LbnCMwfKj87iKfx7y1RUm7RRTPWlULTWQw==";
-
         public static async Task Main(string[] args)
         {
             await MainAsync();
@@ -20,20 +17,21 @@ namespace CosmosStarter
         {
             try
             {
-                //CosmosDriver cosmosDriver = new CosmosDriver();
-                DataGenerator DataGen = new DataGenerator();
-                //await cosmosDriver.CreateDatabaseAsync();
-                //await cosmosDriver.CreateContainerAsync();
+                CosmosDriver cosmosDriver = new CosmosDriver();
+                DataGenerator dataGenerator = new DataGenerator();
+                await cosmosDriver.CreateDatabaseAsync();
+                await cosmosDriver.CreateContainerAsync();
 
-                var orders = DataGen.SeedOrderData(10);
+                var orders = dataGenerator.SeedOrderData(10);
+                var customer = dataGenerator.SeedCustomerData(orders);
+                dataGenerator.AddOrdersToCustomer(orders, customer.CustomerId);
+
+                await dataGenerator.SerializeCustomerData(customer);
+                await dataGenerator.SerializeOrderData(orders);
                
 
-                var customer = DataGen.SeedCustomerData(orders);
-
-                await DataGen.SerializeCustomerData(customer);
-                await DataGen.SerializeOrderData(orders);
-
-                //await cosmosDriver.AddData(customers);
+                await cosmosDriver.AddCustomer(customer);
+                await cosmosDriver.AddOrders(orders, customer.CustomerId);
             }
             catch (CosmosException cosmosException)
             {

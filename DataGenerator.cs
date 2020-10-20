@@ -29,21 +29,20 @@ namespace CosmosStarter
 
             var customerFaker = new Faker<Customer>()
                 .CustomInstantiator(f => new Customer(new Randomizer().Replace("CU#-##-####")))
-                .RuleFor(customer => customer.ModifiedDate, f => f.Date.Recent(100))
-                .RuleFor(customer => customer.FirstName, f => f.Name.FirstName())
-                .RuleFor(customer => customer.LastName, f => f.Name.LastName())
-                .RuleFor(customer => customer.Title, f => f.Name.Prefix(f.Person.Gender))
-                .RuleFor(customer => customer.Suffix, f => f.Name.Suffix())
-                .RuleFor(customer => customer.MiddleName, f => f.Name.FirstName())
-                .RuleFor(customer => customer.SalesPerson, f => f.Name.FullName())
-                .RuleFor(customer => customer.CompanyName, f => f.Company.CompanyName())
-                .RuleFor(customer => customer.CreditLimit, f => f.Finance.Amount(100, 1000))
-                .RuleFor(customer => customer.Address, f => addressFaker.Generate())
-                .RuleFor(customer => customer.Contact, f => contactFaker.Generate());
-
-
+                .RuleFor(cust => cust.ModifiedDate, f => f.Date.Recent(100))
+                .RuleFor(cust => cust.FirstName, f => f.Name.FirstName())
+                .RuleFor(cust => cust.LastName, f => f.Name.LastName())
+                .RuleFor(cust => cust.Title, f => f.Name.Prefix(f.Person.Gender))
+                .RuleFor(cust => cust.Suffix, f => f.Name.Suffix())
+                .RuleFor(cust => cust.MiddleName, f => f.Name.FirstName())
+                .RuleFor(cust => cust.SalesPerson, f => f.Name.FullName())
+                .RuleFor(cust => cust.CompanyName, f => f.Company.CompanyName())
+                .RuleFor(cust => cust.CreditLimit, f => f.Finance.Amount(100, 1000))
+                .RuleFor(cust => cust.Address, f => addressFaker.Generate())
+                .RuleFor(cust => cust.Contact, f => contactFaker.Generate());
 
             var customer =  customerFaker.Generate();
+            customer.CustomerNumber = customer.CustomerId;
             customer.OrderIDs = Orderids;
 
             return customer;
@@ -67,11 +66,10 @@ namespace CosmosStarter
                     .RuleFor(o => o.Date, f => f.Date.Past(3))
                     .RuleFor(o => o.OrderValue, f => f.Finance.Amount(0, 10000))
                     .RuleFor(o => o.Config, f => f.PickRandom<string>(systems))
-                    .RuleFor(order => order.Shipped, f => f.Random.Bool(0.9f));
+                    .RuleFor(o => o.Shipped, f => f.Random.Bool(0.9f));
 
                 var order = orderFaker.Generate();
                 orders.Add(order);
-
             }
 
             return orders;
@@ -96,6 +94,14 @@ namespace CosmosStarter
                 }
             }
             
+        }
+
+        public void AddOrdersToCustomer(IEnumerable<Order> orders, string customerId)
+        {
+            foreach (var order in orders)
+            {
+                order.CustomerId = customerId;
+            }
         }
     }
 }

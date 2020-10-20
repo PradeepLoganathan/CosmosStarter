@@ -7,12 +7,13 @@ namespace CosmosStarter.Entities
 
     public class Customer
     {
-        public Customer(string customerID)
+        public Customer(string customerId)
         {
-            CustomerId = customerID;
+            CustomerId = customerId;
         }
 
         [JsonProperty(PropertyName = "id")]
+        public string CustomerNumber { get; set; }
         public string CustomerId { get; }
         public DateTime ModifiedDate { get; set; }
         public string Title { get; set; }
