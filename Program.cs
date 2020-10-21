@@ -22,16 +22,14 @@ namespace CosmosStarter
                 await cosmosDriver.CreateDatabaseAsync();
                 await cosmosDriver.CreateContainerAsync();
 
-                
-             
-
                 var orders = dataGenerator.SeedOrderData(10);
                 var customer = dataGenerator.SeedCustomerData(orders);
                 dataGenerator.AddOrdersToCustomer(orders, customer.CustomerId);
 
-                await dataGenerator.SerializeCustomerData(customer);
-                await dataGenerator.SerializeOrderData(orders);
-               
+                //await dataGenerator.SerializeCustomerData(customer);
+                //await dataGenerator.SerializeOrderData(orders);
+
+                await cosmosDriver.AddCustomerStream(customer);
 
                 await cosmosDriver.AddCustomer(customer);
                 await cosmosDriver.AddOrders(orders, customer.CustomerId);

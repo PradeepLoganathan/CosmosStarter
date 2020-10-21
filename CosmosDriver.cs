@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using CosmosStarter.Entities;
 using Microsoft.Azure.Cosmos;
+using Newtonsoft.Json;
 
 namespace CosmosStarter
 {
@@ -12,13 +15,14 @@ namespace CosmosStarter
         private Database _database;
         private Container _container;
 
-        private const string EndpointUri = "https://localhost:8081";
-        private const string PrimaryKey = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
+        
         private readonly string _databaseId = "thetaDb";
         private readonly string _containerId = "CustomerContainer";
+
+        private static readonly JsonSerializer Serializer = new JsonSerializer();
         public CosmosDriver()
         {
-            _cosmosClient = new CosmosClient(EndpointUri, PrimaryKey);
+            _cosmosClient = CosmosDbConnection.Instance;
         }
         public async Task CreateDatabaseAsync()
         {
@@ -34,7 +38,19 @@ namespace CosmosStarter
         }
         public async Task CreateContainerAsync()
         {
-            this._container = await this._database.CreateContainerIfNotExistsAsync(_containerId, "/CustomerId");
+            ContainerProperties containerProperties = new ContainerProperties()
+            {
+                Id = Guid.NewGuid().ToString(),
+                PartitionKeyPath = "/CustomerId",
+                IndexingPolicy = new IndexingPolicy()
+                {
+                    Automatic = false,
+                    IndexingMode = IndexingMode.Lazy,
+                }
+            };
+
+
+            this._container = await this._database.CreateContainerIfNotExistsAsync(containerProperties);
         }
 
         public async Task AddCustomer(Customer customer)
@@ -49,8 +65,64 @@ namespace CosmosStarter
                 Console.WriteLine("Exception occured in AddCustomer: {0} Message body is {1}.\n", ex.Message,ex.ResponseBody);
                 throw;
             }
-
         }
+
+        public async Task AddCustomerStream(Customer customer)
+        {
+            try
+            {
+                MemoryStream streamPayload = new MemoryStream();
+                await using (StreamWriter streamWriter = new StreamWriter(streamPayload, Encoding.Default, 1024, true))
+                {
+                    using (JsonWriter writer = new JsonTextWriter(streamWriter))
+                    {
+                        writer.Formatting = Newtonsoft.Json.Formatting.None;
+                        Serializer.Serialize(writer, customer);
+                        writer.Flush();
+                        streamWriter.Flush();
+                    }
+                }
+
+                streamPayload.Position = 0;
+                Customer streamResponse;
+                await using (Stream stream = streamPayload )
+                {
+                    using (ResponseMessage responseMessage = await _container.CreateItemStreamAsync(stream, new PartitionKey(customer.CustomerId)))
+                    {
+                        // Item stream operations do not throw exceptions for better performance
+                        if (responseMessage.IsSuccessStatusCode)
+                        {
+                            await using (stream)
+                            {
+                                if (typeof(Stream).IsAssignableFrom(typeof(Customer)))
+                                {
+                                    streamResponse  = (object)stream as Customer;
+                                }
+
+                                using (StreamReader sr = new StreamReader(stream))
+                                {
+                                    using (JsonTextReader jsonTextReader = new JsonTextReader(sr))
+                                    {
+                                        streamResponse  = Serializer.Deserialize<Customer>(jsonTextReader);
+                                    }
+                                }
+                            }
+
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Create item from stream failed. Status code: {responseMessage.StatusCode} Message: {responseMessage.ErrorMessage}");
+                        }
+                    }
+                }
+            }
+            catch (CosmosException ex) 
+            {
+                Console.WriteLine("Exception occured in AddCustomer: {0} Message body is {1}.\n", ex.Message,ex.ResponseBody);
+                throw;
+            }
+        }
+
 
         public async Task AddOrders(List<Order> orders, string CustomerId)
         {
@@ -83,7 +155,6 @@ namespace CosmosStarter
                 Console.WriteLine("Exception occured in GetCustomer: {0} Message body is {1}.\n", ex.Message,ex.ResponseBody);
                 throw ;
             }
-
         }
 
         public async Task<List<Order>> GetOrders(string customerId)
@@ -115,7 +186,6 @@ namespace CosmosStarter
                 Console.WriteLine("Exception occured in GetCustomer: {0} Message body is {1}.\n", ex.Message,ex.ResponseBody);
                 throw ;
             }
-
         }
     }
 }
