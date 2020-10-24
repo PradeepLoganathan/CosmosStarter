@@ -13,11 +13,13 @@ namespace CosmosStarter
     {
         private readonly CosmosClient _cosmosClient;
         private Database _database;
-        private Container _container;
+        private Container _customerContainer, _orderContainer;
 
-        
-        private readonly string _databaseId = "thetaDb";
-        private readonly string _containerId = "CustomerContainer";
+
+
+        private const string DatabaseId = "thetaDb";
+        private const string CustomerContainerId = "CustomerContainer";
+        private const string OrderContainerId = "OrderContainer";
 
         private static readonly JsonSerializer Serializer = new JsonSerializer();
         public CosmosDriver()
@@ -28,7 +30,7 @@ namespace CosmosStarter
         {
             try
             {
-                this._database = await this._cosmosClient.CreateDatabaseIfNotExistsAsync(_databaseId);
+                this._database = await this._cosmosClient.CreateDatabaseIfNotExistsAsync(DatabaseId);
             }
             catch (Exception e)
             {
@@ -36,11 +38,22 @@ namespace CosmosStarter
                 throw;
             }
         }
-        public async Task CreateContainerAsync()
+        public async Task CreateContainersAsync()
         {
-            ContainerProperties containerProperties = new ContainerProperties()
+            var customerContainerProperties = new ContainerProperties()
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = CustomerContainerId,
+                PartitionKeyPath = "/CustomerId",
+                IndexingPolicy = new IndexingPolicy()
+                {
+                    Automatic = false,
+                    IndexingMode = IndexingMode.Lazy,
+                }
+            };
+
+            var orderContainerProperties = new ContainerProperties()
+            {
+                Id = OrderContainerId,
                 PartitionKeyPath = "/CustomerId",
                 IndexingPolicy = new IndexingPolicy()
                 {
@@ -50,14 +63,15 @@ namespace CosmosStarter
             };
 
 
-            this._container = await this._database.CreateContainerIfNotExistsAsync(containerProperties);
+            this._customerContainer = await this._database.CreateContainerIfNotExistsAsync(customerContainerProperties);
+            this._orderContainer = await this._database.CreateContainerIfNotExistsAsync(orderContainerProperties);
         }
 
         public async Task AddCustomer(Customer customer)
         {
             try
             {
-                ItemResponse<Customer> customerResponse = await this._container.CreateItemAsync<Customer>(customer, new PartitionKey(customer.CustomerId));
+                ItemResponse<Customer> customerResponse = await this._customerContainer.CreateItemAsync<Customer>(customer, new PartitionKey(customer.CustomerId));
                 Console.WriteLine("Created item in database with id: {0} Operation consumed {1} RUs.\n", customerResponse.Resource.CustomerId, customerResponse.RequestCharge);
             }
             catch (CosmosException ex) 
@@ -67,27 +81,27 @@ namespace CosmosStarter
             }
         }
 
+        #region insert-data
         public async Task AddCustomerStream(Customer customer)
         {
             try
             {
-                MemoryStream streamPayload = new MemoryStream();
-                await using (StreamWriter streamWriter = new StreamWriter(streamPayload, Encoding.Default, 1024, true))
+                var streamPayload = new MemoryStream();
+                await using (var streamWriter = new StreamWriter(streamPayload, Encoding.Default, 1024, true))
                 {
                     using (JsonWriter writer = new JsonTextWriter(streamWriter))
                     {
-                        writer.Formatting = Newtonsoft.Json.Formatting.None;
+                        writer.Formatting = Formatting.None;
                         Serializer.Serialize(writer, customer);
-                        writer.Flush();
-                        streamWriter.Flush();
+                        await writer.FlushAsync();
+                        await streamWriter.FlushAsync();
                     }
                 }
 
                 streamPayload.Position = 0;
-                Customer streamResponse;
                 await using (Stream stream = streamPayload )
                 {
-                    using (ResponseMessage responseMessage = await _container.CreateItemStreamAsync(stream, new PartitionKey(customer.CustomerId)))
+                    using (ResponseMessage responseMessage = await _customerContainer.CreateItemStreamAsync(stream, new PartitionKey(customer.CustomerId)))
                     {
                         // Item stream operations do not throw exceptions for better performance
                         if (responseMessage.IsSuccessStatusCode)
@@ -96,14 +110,13 @@ namespace CosmosStarter
                             {
                                 if (typeof(Stream).IsAssignableFrom(typeof(Customer)))
                                 {
-                                    streamResponse  = (object)stream as Customer;
                                 }
 
                                 using (StreamReader sr = new StreamReader(stream))
                                 {
                                     using (JsonTextReader jsonTextReader = new JsonTextReader(sr))
                                     {
-                                        streamResponse  = Serializer.Deserialize<Customer>(jsonTextReader);
+                                        Serializer.Deserialize<Customer>(jsonTextReader);
                                     }
                                 }
                             }
@@ -124,13 +137,13 @@ namespace CosmosStarter
         }
 
 
-        public async Task AddOrders(List<Order> orders, string CustomerId)
+        public async Task AddOrders(List<Order> orders, string orderId)
         {
             try
             {
                 foreach (var order in orders)
                 {
-                    ItemResponse<Order> orderResponse = await this._container.CreateItemAsync<Order>(order, new PartitionKey(CustomerId));
+                    ItemResponse<Order> orderResponse = await this._orderContainer.CreateItemAsync<Order>(order, new PartitionKey(orderId));
                     Console.WriteLine("Created item in database with id: {0} Operation consumed {1} RUs.\n", orderResponse.Resource.CustomerId, orderResponse.RequestCharge);
                 }
                 
@@ -142,12 +155,12 @@ namespace CosmosStarter
             }
 
         }
-
+        #endregion
         public async Task<Customer> GetCustomer(string customerId)
         {
             try
             {
-                var customerResponse = await this._container.ReadItemAsync<Customer>(customerId, new PartitionKey(customerId));
+                var customerResponse = await this._customerContainer.ReadItemAsync<Customer>(customerId, new PartitionKey(customerId));
                 return customerResponse;
             }
             catch (CosmosException ex) 
@@ -164,8 +177,8 @@ namespace CosmosStarter
                 var sqlQueryText = "SELECT * FROM c WHERE c.CustomerId = @customerid";
 
                 Console.WriteLine("Running query: {0}\n", sqlQueryText);
-                QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText).WithParameter("@customerid", "CU7-36-8183" );
-                FeedIterator<Order> queryResultSetIterator = this._container.GetItemQueryIterator<Order>(queryDefinition);
+                var queryDefinition = new QueryDefinition(sqlQueryText).WithParameter("@customerid", customerId);
+                FeedIterator<Order> queryResultSetIterator = this._orderContainer.GetItemQueryIterator<Order>(queryDefinition);
 
                 List<Order> orders = new List<Order>();
 
@@ -186,6 +199,16 @@ namespace CosmosStarter
                 Console.WriteLine("Exception occured in GetCustomer: {0} Message body is {1}.\n", ex.Message,ex.ResponseBody);
                 throw ;
             }
+        }
+
+        public async Task<Order> UpdateOrder(string orderId)
+        {
+
+        }
+
+        public async Task DeleteOrder(string orderId)
+        {
+
         }
     }
 }

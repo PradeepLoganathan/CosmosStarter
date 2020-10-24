@@ -20,7 +20,7 @@ namespace CosmosStarter
                 CosmosDriver cosmosDriver = new CosmosDriver();
                 DataGenerator dataGenerator = new DataGenerator();
                 await cosmosDriver.CreateDatabaseAsync();
-                await cosmosDriver.CreateContainerAsync();
+                await cosmosDriver.CreateContainersAsync();
 
                 var orders = dataGenerator.SeedOrderData(10);
                 var customer = dataGenerator.SeedCustomerData(orders);
@@ -33,6 +33,7 @@ namespace CosmosStarter
 
                 await cosmosDriver.AddCustomer(customer);
                 await cosmosDriver.AddOrders(orders, customer.CustomerId);
+
                 var customerindb = await cosmosDriver.GetCustomer("CU7-36-8183");
                 var ordersindb = await cosmosDriver.GetOrders("CU7-36-8183");
             }
