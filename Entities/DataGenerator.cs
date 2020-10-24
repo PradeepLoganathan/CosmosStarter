@@ -11,9 +11,9 @@ namespace CosmosStarter.Entities
 {
     class DataGenerator
     {
-        public Customer SeedCustomerData(List<Order> orders)
+        public Customer SeedCustomerData()
         {
-            var Orderids = orders.Select(o => o.OrderId).ToList();
+            //var Orderids = orders.Select(o => o.OrderId).ToList();
 
             var addressFaker = new Faker<Address>()
                 .RuleFor(a => a.StreetAddress, f => f.Address.StreetAddress())
@@ -42,7 +42,7 @@ namespace CosmosStarter.Entities
 
             var customer =  customerFaker.Generate();
             customer.CustomerNumber = customer.CustomerId;
-            customer.OrderIDs = Orderids;
+            
 
             return customer;
         }

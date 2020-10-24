@@ -26,6 +26,6 @@ namespace CosmosStarter.Entities
         public decimal CreditLimit { get; set; }
         public Contact Contact { get; set; }
         public Address Address { get; set; }
-        public IEnumerable<string> OrderIDs { get; set; }
+        
     }
 }

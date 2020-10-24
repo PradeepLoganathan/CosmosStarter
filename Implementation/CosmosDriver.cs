@@ -32,7 +32,7 @@ namespace CosmosStarter
             var Serializer = new JsonSerializer();
             var dataGenerator = new DataGenerator();
             var orders = dataGenerator.SeedOrderData(10);
-            var customer = dataGenerator.SeedCustomerData(orders);
+            var customer = dataGenerator.SeedCustomerData();
             dataGenerator.AddOrdersToCustomer(orders, customer.CustomerId);
 
             return (customer, orders);

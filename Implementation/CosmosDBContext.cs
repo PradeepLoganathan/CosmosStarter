@@ -16,13 +16,14 @@ namespace CosmosStarter
         private const string CustomerContainerId = "CustomerContainer";
         private const string OrderContainerId = "OrderContainer";
 
+        public Container CustomerContainer { get; private set; }
+        public Container OrdersContainer { get; private set; }
+
         public CosmosDBContext(CosmosConfig cosmosConfig)
         {
             this._cosmosConfig = cosmosConfig;
         }
 
-        public Container CustomerContainer { get; private set; }
-        public Container OrdersContainer { get; private set; }
         public async Task Initialize()
         {
             CosmosClientOptions CosmosClientOptions = new CosmosClientOptions()
