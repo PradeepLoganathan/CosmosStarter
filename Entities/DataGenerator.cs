@@ -1,5 +1,4 @@
 ﻿using Bogus;
-using CosmosStarter.Entities;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,7 +7,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace CosmosStarter
+namespace CosmosStarter.Entities
 {
     class DataGenerator
     {
