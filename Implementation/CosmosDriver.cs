@@ -24,6 +24,8 @@ namespace CosmosStarter
             var data = SeedData();
             await customerRepository.AddCustomer(data.Item1);
             await orderRepository.AddOrders(data.Item2, data.Item1.CustomerId);
+            var cust = await customerRepository.GetCustomer("CU8-75-6837");
+            
         }
 
 

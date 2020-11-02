@@ -1,39 +1,39 @@
 ﻿using CosmosStarter.Configuration;
 using CosmosStarter.Interfaces;
-using Microsoft.Azure.Cosmos;
 using System;
+using System.ComponentModel;
 using System.Threading.Tasks;
+using Azure.Cosmos;
 
 namespace CosmosStarter
 {
-    public class CosmosDBContext : ICosmosDBContext
+    public class CosmosDbContext : ICosmosDbContext
     {
         private readonly CosmosConfig _cosmosConfig;
         private CosmosClient _cosmosClient;
-        private Database _database;
+        private CosmosDatabase _database;
 
-        private const string DatabaseId = "thetaDb";
+        private const string DatabaseId = "CustomersDb";
         private const string CustomerContainerId = "CustomerContainer";
         private const string OrderContainerId = "OrderContainer";
 
-        public Container CustomerContainer { get; private set; }
-        public Container OrdersContainer { get; private set; }
+        public CosmosContainer CustomerContainer { get; private set; }
+        public CosmosContainer OrdersContainer { get; private set; }
 
-        public CosmosDBContext(CosmosConfig cosmosConfig)
+        public CosmosDbContext(CosmosConfig cosmosConfig)
         {
             this._cosmosConfig = cosmosConfig;
         }
 
         public async Task Initialize()
         {
-            CosmosClientOptions CosmosClientOptions = new CosmosClientOptions()
+            CosmosClientOptions cosmosClientOptions = new CosmosClientOptions()
             {
                 ConnectionMode = ConnectionMode.Direct,
                 ApplicationName = "CosmosStarter",
-                PortReuseMode = PortReuseMode.PrivatePortPool
             };
 
-            _cosmosClient = new CosmosClient(_cosmosConfig.Endpoint, _cosmosConfig.Key, CosmosClientOptions);
+            _cosmosClient = new CosmosClient(_cosmosConfig.Endpoint, _cosmosConfig.Key, cosmosClientOptions);
 
             await CreateDatabaseAsync();
             await CreateContainersAsync();

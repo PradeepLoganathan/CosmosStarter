@@ -28,7 +28,7 @@ namespace CosmosStarter
             
             var services = new ServiceCollection();
             services.AddSingleton(cosmosConfig);
-            services.AddSingleton<ICosmosDBContext, CosmosDBContext>();
+            services.AddSingleton<ICosmosDbContext, CosmosDbContext>();
             services.AddSingleton<ICustomerRepository, CustomerRepository>();
             services.AddSingleton<IOrderRepository, OrderRepository>();
             services.AddSingleton<ICosmosDriver, CosmosDriver>();
@@ -53,7 +53,7 @@ namespace CosmosStarter
             ConfigureApplication();
             RegisterServices();
             IServiceScope scope = serviceProvider.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<ICosmosDBContext>().Initialize();
+            await scope.ServiceProvider.GetRequiredService<ICosmosDbContext>().Initialize();
             await scope.ServiceProvider.GetRequiredService<ICosmosDriver>().Drive();
             DisposeServices();
 

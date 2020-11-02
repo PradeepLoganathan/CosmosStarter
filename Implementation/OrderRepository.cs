@@ -4,15 +4,16 @@ using Microsoft.Azure.Cosmos;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Azure.Cosmos;
 
 namespace CosmosStarter
 {
     public class OrderRepository : IOrderRepository
     {
-        private readonly ICosmosDBContext cosmosDBContext;
-        public OrderRepository(ICosmosDBContext cosmosDBContext)
+        private readonly ICosmosDbContext _cosmosDbContext;
+        public OrderRepository(ICosmosDbContext cosmosDbContext)
         {
-            this.cosmosDBContext = cosmosDBContext;
+            this._cosmosDbContext = cosmosDbContext;
         }
 
         public async Task AddOrders(List<Order> orders, string customerId)
@@ -21,8 +22,8 @@ namespace CosmosStarter
             {
                 foreach (var order in orders)
                 {
-                    ItemResponse<Order> orderResponse = await this.cosmosDBContext.OrdersContainer.CreateItemAsync<Order>(order, new PartitionKey(customerId));
-                    Console.WriteLine("Created item in database with id: {0} Operation consumed {1} RUs.\n", orderResponse.Resource.CustomerId, orderResponse.RequestCharge);
+                    ItemResponse<Order> orderResponse = await this._cosmosDbContext.OrdersContainer.CreateItemAsync<Order>(order, new PartitionKey(customerId));
+                    Console.WriteLine("Created item in database with id: {0} Operation consumed {1} RUs.\n", orderResponse.Value.CustomerId, orderResponse.RequestCharge);
                 }
 
             }
@@ -37,7 +38,7 @@ namespace CosmosStarter
         {
             try
             {
-                await this.cosmosDBContext.OrdersContainer.DeleteItemAsync<Order>(orderId, new PartitionKey(customerId));
+                await this._cosmosDbContext.OrdersContainer.DeleteItemAsync<Order>(orderId, new PartitionKey(customerId));
             }
             catch (Exception)
             {
@@ -60,7 +61,7 @@ namespace CosmosStarter
 
                 Console.WriteLine("Running query: {0}\n", sqlQueryText);
                 var queryDefinition = new QueryDefinition(sqlQueryText).WithParameter("@customerid", customerId);
-                FeedIterator<Order> queryResultSetIterator = this.cosmosDBContext.OrdersContainer.GetItemQueryIterator<Order>(queryDefinition);
+                FeedIterator<Order> queryResultSetIterator = this._cosmosDbContext.OrdersContainer.GetItemQueryIterator<Order>(queryDefinition);
 
                 List<Order> orders = new List<Order>();
 
@@ -87,7 +88,7 @@ namespace CosmosStarter
         {
             try
             {
-                var orderResponse = await this.cosmosDBContext.OrdersContainer.ReadItemAsync<Order>(orderId, new PartitionKey(customerId));
+                var orderResponse = await this._cosmosDbContext.OrdersContainer.ReadItemAsync<Order>(orderId, new PartitionKey(customerId));
                 return orderResponse;
             }
             catch (CosmosException ex)

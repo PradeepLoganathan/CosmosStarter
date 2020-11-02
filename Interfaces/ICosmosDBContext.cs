@@ -1,12 +1,12 @@
-﻿using Microsoft.Azure.Cosmos;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Azure.Cosmos;
 
 namespace CosmosStarter.Interfaces
 {
-    public interface ICosmosDBContext
+    public interface ICosmosDbContext
     {
-        Container CustomerContainer { get; }
-        Container OrdersContainer { get; }
+        CosmosContainer CustomerContainer { get; }
+        CosmosContainer OrdersContainer { get; }
 
         Task CreateDatabaseAsync();
         Task CreateContainersAsync();
