@@ -1,7 +1,7 @@
 ﻿using CosmosStarter.Entities;
 using CosmosStarter.Interfaces;
-using Microsoft.Azure.Cosmos;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Azure.Cosmos;
 
@@ -30,6 +30,26 @@ namespace CosmosStarter
 
         public async Task DeleteCustomer(string customerId)
         {
+
+        }
+
+        public async Task<List<Customer>> GetCustomersWithHighCreditLimit()
+        {
+            var queryDefinition = new QueryDefinition("select * from c where c.value > @creditlimit")
+                .WithParameter("@creditlimit", 1000);
+            var resultSet = this._cosmosDbContext.CustomerContainer.GetItemQueryIterator<Customer>(
+                queryDefinition,null,
+                new QueryRequestOptions()
+                {
+                    PartitionKey = new PartitionKey("CustomerId"),
+                    MaxItemCount = 1
+                });
+
+            var customers = new List<Customer>();
+            await foreach (var result in resultSet)
+                customers.Add(result);
+
+            return customers;
 
         }
 

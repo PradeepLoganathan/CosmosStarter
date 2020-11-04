@@ -23,13 +23,11 @@ namespace CosmosStarter
                 foreach (var order in orders)
                 {
                     ItemResponse<Order> orderResponse = await this._cosmosDbContext.OrdersContainer.CreateItemAsync<Order>(order, new PartitionKey(customerId));
-                    Console.WriteLine("Created item in database with id: {0} Operation consumed {1} RUs.\n", orderResponse.Value.CustomerId, orderResponse.RequestCharge);
                 }
 
             }
             catch (CosmosException ex)
             {
-                Console.WriteLine("Exception occured in AddOrders: {0} Message body is {1}.\n", ex.Message, ex.ResponseBody);
                 throw;
             }
         }
@@ -57,29 +55,27 @@ namespace CosmosStarter
         {
             try
             {
-                var sqlQueryText = "SELECT * FROM c WHERE c.CustomerId = @customerid";
+                const string sqlQueryText = "SELECT * FROM c WHERE c.CustomerId = @customerid";
 
                 Console.WriteLine("Running query: {0}\n", sqlQueryText);
                 var queryDefinition = new QueryDefinition(sqlQueryText).WithParameter("@customerid", customerId);
-                FeedIterator<Order> queryResultSetIterator = this._cosmosDbContext.OrdersContainer.GetItemQueryIterator<Order>(queryDefinition);
-
-                List<Order> orders = new List<Order>();
-
-                while (queryResultSetIterator.HasMoreResults)
-                {
-                    FeedResponse<Order> currentResultSet = await queryResultSetIterator.ReadNextAsync();
-                    foreach (Order order in currentResultSet)
+                var resultSet = this._cosmosDbContext.OrdersContainer.GetItemQueryIterator<Order>(
+                    queryDefinition,null,
+                    new QueryRequestOptions()
                     {
-                        orders.Add(order);
-                        Console.WriteLine("\tRead {0}\n", order.OrderId);
-                    }
-                }
+                        PartitionKey = new PartitionKey("CustomerId"),
+                        MaxItemCount = 1
+                    });
+
+                var orders = new List<Order>();
+                await foreach (var result in resultSet)
+                    orders.Add(result);
 
                 return orders;
+                
             }
-            catch (CosmosException ex)
+            catch (CosmosException)
             {
-                Console.WriteLine("Exception occured in GetCustomer: {0} Message body is {1}.\n", ex.Message, ex.ResponseBody);
                 throw;
             }
         }
@@ -91,9 +87,8 @@ namespace CosmosStarter
                 var orderResponse = await this._cosmosDbContext.OrdersContainer.ReadItemAsync<Order>(orderId, new PartitionKey(customerId));
                 return orderResponse;
             }
-            catch (CosmosException ex)
+            catch (CosmosException)
             {
-                Console.WriteLine("Exception occured in GetCustomer: {0} Message body is {1}.\n", ex.Message, ex.ResponseBody);
                 throw;
             }
         }

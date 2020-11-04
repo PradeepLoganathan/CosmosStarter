@@ -13,5 +13,4 @@ namespace CosmosStarter.Entities
         public bool Shipped { get; set; }
         public string CustomerId { get; set; }
     }
-
 }

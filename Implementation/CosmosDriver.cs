@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using CosmosStarter.Entities;
 using CosmosStarter.Interfaces;
+using CosmosStarter.Seeders;
 using Newtonsoft.Json;
 
 namespace CosmosStarter

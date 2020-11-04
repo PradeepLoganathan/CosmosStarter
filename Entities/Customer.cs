@@ -17,8 +17,7 @@ namespace CosmosStarter.Entities
         public string CustomerId { get; }
         public DateTime ModifiedDate { get; set; }
         public string Title { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
+       
         public string MiddleName { get; set; }
         public string Suffix { get; set; }
         public string CompanyName { get; set; }
@@ -26,6 +25,5 @@ namespace CosmosStarter.Entities
         public decimal CreditLimit { get; set; }
         public Contact Contact { get; set; }
         public Address Address { get; set; }
-        
     }
 }
