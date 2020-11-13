@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace CosmosStarter.Entities
 {
@@ -12,7 +11,7 @@ namespace CosmosStarter.Entities
             CustomerId = customerId;
         }
 
-        [JsonProperty(PropertyName = "id")]
+        [JsonPropertyName("id")]
         public string CustomerNumber { get; set; }
         public string CustomerId { get; }
         public DateTime ModifiedDate { get; set; }

@@ -1,11 +1,10 @@
-﻿using CosmosStarter.Configuration;
-using CosmosStarter.Interfaces;
-using System;
-using System.ComponentModel;
+﻿using System;
 using System.Threading.Tasks;
 using Azure.Cosmos;
+using CosmosStarter.Configuration;
+using CosmosStarter.Interfaces;
 
-namespace CosmosStarter
+namespace CosmosStarter.Implementation
 {
     public class CosmosDbContext : ICosmosDbContext
     {

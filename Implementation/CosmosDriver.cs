@@ -3,40 +3,37 @@ using System.Threading.Tasks;
 using CosmosStarter.Entities;
 using CosmosStarter.Interfaces;
 using CosmosStarter.Seeders;
-using Newtonsoft.Json;
 
-namespace CosmosStarter
+namespace CosmosStarter.Implementation
 {
     public class CosmosDriver : ICosmosDriver
     {
 
-        private readonly IOrderRepository orderRepository;
-        private readonly ICustomerRepository customerRepository;
+        private readonly IOrderRepository _orderRepository;
+        private readonly ICustomerRepository _customerRepository;
 
         public CosmosDriver(IOrderRepository orderRepository, ICustomerRepository customerRepository)
         {
-            this.orderRepository = orderRepository;
-            this.customerRepository = customerRepository;
+            this._orderRepository = orderRepository;
+            this._customerRepository = customerRepository;
         }
 
       
         public async Task Drive()
         {
-            var data = SeedData();
-            await customerRepository.AddCustomer(data.Item1);
-            await orderRepository.AddOrders(data.Item2, data.Item1.CustomerId);
-            var cust = await customerRepository.GetCustomer("CU8-75-6837");
+            var (customer, orders) = SeedData();
+            await _customerRepository.AddCustomer(customer);
+            await _orderRepository.AddOrders(orders, customer.CustomerId);
+            var cust = await _customerRepository.GetCustomer("CU8-75-6837");
             
         }
 
 
-        private (Customer, List<Order>) SeedData()
+        private static (Customer, List<Order>) SeedData()
         {
-            var Serializer = new JsonSerializer();
-            var dataGenerator = new DataGenerator();
-            var orders = dataGenerator.SeedOrderData(10);
-            var customer = dataGenerator.SeedCustomerData();
-            dataGenerator.AddOrdersToCustomer(orders, customer.CustomerId);
+            var orders = DataGenerator.SeedOrderData(50);
+            var customer = DataGenerator.SeedCustomerData();
+            DataGenerator.AddOrdersToCustomer(orders, customer.CustomerId);
 
             return (customer, orders);
 

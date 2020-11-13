@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -7,29 +8,24 @@ using CosmosStarter.Entities;
 
 namespace CosmosStarter.Seeders
 {
-    class DataGenerator
+    public class DataGenerator
     {
-        public Customer SeedCustomerData()
+        public static Customer SeedCustomerData()
         {
-            //var Orderids = orders.Select(o => o.OrderId).ToList();
             var customerFaker = new CustomerFaker();
             var customer = customerFaker.Generate();
             customer.CustomerNumber = customer.CustomerId;
             return customer;
         }
 
-        public List<Order> SeedOrderData(int recordCount)
+        public static List<Order> SeedOrderData(int recordCount)
         {
-
-            List<Order> orders = new List<Order>();
-
-            for (int i = 1; i <= recordCount; i++)
+            var orderFaker = new OrderFaker();
+            var orders = orderFaker.Generate(recordCount);
+            foreach (var order in orders)
             {
-                var orderFaker = new OrderFaker();
-                var order = orderFaker.Generate();
-                orders.Add(order);
+                order.OrderId = Guid.NewGuid().ToString();
             }
-
             return orders;
         }
 
@@ -54,7 +50,7 @@ namespace CosmosStarter.Seeders
 
         }
 
-        public void AddOrdersToCustomer(IEnumerable<Order> orders, string customerId)
+        public static void AddOrdersToCustomer(IEnumerable<Order> orders, string customerId)
         {
             foreach (var order in orders)
             {

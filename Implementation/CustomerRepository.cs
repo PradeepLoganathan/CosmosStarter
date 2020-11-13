@@ -1,11 +1,11 @@
-﻿using CosmosStarter.Entities;
-using CosmosStarter.Interfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Azure.Cosmos;
+using CosmosStarter.Entities;
+using CosmosStarter.Interfaces;
 
-namespace CosmosStarter
+namespace CosmosStarter.Implementation
 {
     public class CustomerRepository : ICustomerRepository
     {
